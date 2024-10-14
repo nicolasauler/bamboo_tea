@@ -11,7 +11,10 @@ void setup() {
     lcd.clear();
     lcd.backlight();      // Make sure backlight is on
     lcd.setCursor(2,0);   //Set cursor to character 2 on line 0
-    lcd.print("bamboo");
+    lcd.print("bamboo: soil umidity");
+
+    pinMode(12, OUTPUT); // blue LED
+    pinMode(27, OUTPUT); // red LED
 }
 
 void loop() {
@@ -26,5 +29,18 @@ void loop() {
     Serial.println(sensorValue);
     lcd.setCursor(2,1);   //Set cursor to character 2 on line 0
     lcd.print(sensorValue);
+
+    if (sensorValue > 3000) {
+        digitalWrite(12, HIGH);
+    } else {
+        digitalWrite(12, LOW);
+    }
+
+    if (sensorValue < 1400) {
+        digitalWrite(27, HIGH);
+    } else {
+        digitalWrite(27, LOW);
+    }
+
     delay(1000); // Delay for one second before the next reading
 }
