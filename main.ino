@@ -3,6 +3,10 @@
 
 LiquidCrystal_I2C lcd(0x27,16,2);  // set the LCD address to 0x3F for a 16 chars and 2 line display
 
+int blue_led = 12;
+int red_led = 27;
+int rele = 32;
+
 void setup() {
     // Serial.begin(115200);
     Serial.begin(9600); // Initialize serial communication for debugging
@@ -10,37 +14,40 @@ void setup() {
     lcd.init();
     lcd.clear();
     lcd.backlight();      // Make sure backlight is on
-    lcd.setCursor(2,0);   //Set cursor to character 2 on line 0
+    lcd.setCursor(2,0);
     lcd.print("bamboo: soil umidity");
 
-    pinMode(12, OUTPUT); // blue LED
-    pinMode(27, OUTPUT); // red LED
+    pinMode(blue_led, OUTPUT);
+    pinMode(red_led, OUTPUT);
+    pinMode(rele, OUTPUT);
 }
 
 void loop() {
-    // lcd.setCursor(2,1);   //Set cursor to character 2 on line 0
+    // lcd.setCursor(2,1);
     // lcd.print("Dst: ");
     // lcd.setCursor(11,1);
     // lcd.print("  ");
     // delay(2000);
 
-    int sensorValue = analogRead(A0); // Read the analog value from the sensor
+    int sensorValue = analogRead(A0);
     Serial.print("Soil Moisture Level: ");
     Serial.println(sensorValue);
-    lcd.setCursor(2,1);   //Set cursor to character 2 on line 0
+    lcd.setCursor(2,1);
     lcd.print(sensorValue);
 
     if (sensorValue > 3000) {
-        digitalWrite(12, HIGH);
+        digitalWrite(blue_led, HIGH);
+        digitalWrite(rele, HIGH);
     } else {
-        digitalWrite(12, LOW);
+        digitalWrite(blue_led, LOW);
+        digitalWrite(rele, LOW);
     }
 
     if (sensorValue < 1400) {
-        digitalWrite(27, HIGH);
+        digitalWrite(red_led, HIGH);
     } else {
-        digitalWrite(27, LOW);
+        digitalWrite(red_led, LOW);
     }
 
-    delay(1000); // Delay for one second before the next reading
+    delay(1000);
 }
