@@ -10,10 +10,11 @@ WiFiMulti wifiMulti;
 #define WIFI_SSID "Pedro"
 #define WIFI_PASSWORD "pedrolopes123"
 
-#define INFLUXDB_URL "http://192.168.254.180:8086"
-#define INFLUXDB_TOKEN "pp-NO2oX4WjRyGy5rqHMrhmNbEFKllozx_zYiReS0AhKwC-cAMz5FvhTgRTazxqUJ1Pgw1haKGsPwJQ0oPuKkQ=="
-#define INFLUXDB_ORG "d7faedaf1294696d"
-#define INFLUXDB_BUCKET "planta"
+
+#define INFLUXDB_URL "https://influx.fina.center"
+#define INFLUXDB_TOKEN ""
+#define INFLUXDB_ORG ""
+#define INFLUXDB_BUCKET "plant0"
 
 #define TZ_INFO "UTC-3"
 
@@ -23,12 +24,14 @@ InfluxDBClient client(INFLUXDB_URL, INFLUXDB_ORG, INFLUXDB_BUCKET, INFLUXDB_TOKE
 // Declare Data point
 Point sensor("wifi_status");
 Point sensor2("umdty");
+Point sensor3("light");
 
 LiquidCrystal_I2C lcd(0x27,16,2);  // set the LCD address to 0x3F for a 16 chars and 2 line display
 
 const int blue_led = 12;
 const int red_led = 27;
 const int rele = 32;
+const int photoresistor = 34;
 
 void setup() {
     Serial.begin(9600); // Initialize serial communication for debugging
@@ -65,12 +68,15 @@ void setup() {
     sensor2.addTag("device", DEVICE);
     sensor2.addTag("umdty", "umidade do solo");
 
+    sensor3.addTag("device", DEVICE);
+    sensor3.addTag("light", "light intensity");
+
     Serial.println("initialized");
     lcd.init();
     lcd.clear();
     lcd.backlight();      // Make sure backlight is on
     lcd.setCursor(1,0);
-    lcd.print("soil umdty: ");
+    lcd.print("umdty: ");
     lcd.setCursor(1,1);
     lcd.print("light: ");
 
@@ -86,15 +92,18 @@ void loop() {
     // lcd.print("  ");
     // delay(2000);
 
+    // umidity
     int sensorValue = analogRead(A0);
     Serial.print("Soil Moisture Level: ");
     Serial.println(sensorValue);
-    lcd.setCursor(9,0);
+    lcd.setCursor(7,0);
     lcd.print(sensorValue);
 
+    int relayStatus = 0;
     if (sensorValue > 3000) {
         digitalWrite(blue_led, HIGH);
         digitalWrite(rele, HIGH);
+        relayStatus = 1;
     } else {
         digitalWrite(blue_led, LOW);
         digitalWrite(rele, LOW);
@@ -106,16 +115,26 @@ void loop() {
         digitalWrite(red_led, LOW);
     }
 
+    // light
+    int lightValue = analogRead(photoresistor);
+    Serial.print("Light Level: ");
+    Serial.println(lightValue);
+    lcd.setCursor(7,1);
+    lcd.print(lightValue);
+
     // influxdb
 
     // Clear fields for reusing the point. Tags will remain the same as set above.
     sensor.clearFields();
     sensor2.clearFields();
+    sensor3.clearFields();
 
     // Store measured value into point
     // Report RSSI of currently connected network
     sensor.addField("rssi", WiFi.RSSI());
     sensor2.addField("umdty", sensorValue);
+    sensor2.addField("relay", relayStatus);
+    sensor3.addField("light", lightValue);
 
     // Print what are we exactly writing
     Serial.print("Writing: ");
@@ -128,14 +147,18 @@ void loop() {
     }
 
     // Write point
-    // if (!client.writePoint(sensor)) {
-    //   Serial.print("InfluxDB write failed: ");
-    //   Serial.println(client.getLastErrorMessage());
-    // }
-    // if (!client.writePoint(sensor2)) {
-    //   Serial.print("InfluxDB write failed: ");
-    //   Serial.println(client.getLastErrorMessage());
-    // }
+    if (!client.writePoint(sensor)) {
+      Serial.print("InfluxDB write failed: ");
+      Serial.println(client.getLastErrorMessage());
+    }
+    if (!client.writePoint(sensor2)) {
+      Serial.print("InfluxDB write failed: ");
+      Serial.println(client.getLastErrorMessage());
+    }
+    if (!client.writePoint(sensor3)) {
+      Serial.print("InfluxDB write failed: ");
+      Serial.println(client.getLastErrorMessage());
+    }
 
     Serial.println("Waiting 1 second");
     delay(1000);
