@@ -23,6 +23,8 @@
             buildInputs = [
               arduino-cli
               nixpkgs-fmt
+              influxdb2-cli
+              influxdb2
               pkg-config
               python3
               python312Packages.pyserial

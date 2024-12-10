@@ -10,10 +10,10 @@ WiFiMulti wifiMulti;
 #define WIFI_SSID "Pedro"
 #define WIFI_PASSWORD "pedrolopes123"
 
-#define INFLUXDB_URL "http://127.0.0.1:8086"
-#define INFLUXDB_TOKEN "t1M1oSSdC_H3pvy8tuxU3siiwKQLjKZ7Vf0bJaw7I18PZrkgMLPocyUW6o3-wL4VECeVTMVMynZHDJkV7iE2Nw=="
-#define INFLUXDB_ORG "0c73d852c85bea8b"
-#define INFLUXDB_BUCKET "plant0"
+#define INFLUXDB_URL "http://192.168.254.180:8086"
+#define INFLUXDB_TOKEN "pp-NO2oX4WjRyGy5rqHMrhmNbEFKllozx_zYiReS0AhKwC-cAMz5FvhTgRTazxqUJ1Pgw1haKGsPwJQ0oPuKkQ=="
+#define INFLUXDB_ORG "d7faedaf1294696d"
+#define INFLUXDB_BUCKET "planta"
 
 #define TZ_INFO "UTC-3"
 
@@ -22,12 +22,13 @@ InfluxDBClient client(INFLUXDB_URL, INFLUXDB_ORG, INFLUXDB_BUCKET, INFLUXDB_TOKE
 
 // Declare Data point
 Point sensor("wifi_status");
+Point sensor2("umdty");
 
 LiquidCrystal_I2C lcd(0x27,16,2);  // set the LCD address to 0x3F for a 16 chars and 2 line display
 
-int blue_led = 12;
-int red_led = 27;
-int rele = 32;
+const int blue_led = 12;
+const int red_led = 27;
+const int rele = 32;
 
 void setup() {
     Serial.begin(9600); // Initialize serial communication for debugging
@@ -61,12 +62,17 @@ void setup() {
     sensor.addTag("device", DEVICE);
     sensor.addTag("SSID", WiFi.SSID());
 
+    sensor2.addTag("device", DEVICE);
+    sensor2.addTag("umdty", "umidade do solo");
+
     Serial.println("initialized");
     lcd.init();
     lcd.clear();
     lcd.backlight();      // Make sure backlight is on
-    lcd.setCursor(2,0);
-    lcd.print("bamboo: soil umidity");
+    lcd.setCursor(1,0);
+    lcd.print("soil umdty: ");
+    lcd.setCursor(1,1);
+    lcd.print("light: ");
 
     pinMode(blue_led, OUTPUT);
     pinMode(red_led, OUTPUT);
@@ -83,7 +89,7 @@ void loop() {
     int sensorValue = analogRead(A0);
     Serial.print("Soil Moisture Level: ");
     Serial.println(sensorValue);
-    lcd.setCursor(2,1);
+    lcd.setCursor(9,0);
     lcd.print(sensorValue);
 
     if (sensorValue > 3000) {
@@ -104,14 +110,17 @@ void loop() {
 
     // Clear fields for reusing the point. Tags will remain the same as set above.
     sensor.clearFields();
+    sensor2.clearFields();
 
     // Store measured value into point
     // Report RSSI of currently connected network
     sensor.addField("rssi", WiFi.RSSI());
+    sensor2.addField("umdty", sensorValue);
 
     // Print what are we exactly writing
     Serial.print("Writing: ");
     Serial.println(sensor.toLineProtocol());
+    Serial.println(sensor2.toLineProtocol());
 
     // Check WiFi connection and reconnect if needed
     if (wifiMulti.run() != WL_CONNECTED) {
@@ -119,10 +128,14 @@ void loop() {
     }
 
     // Write point
-    if (!client.writePoint(sensor)) {
-      Serial.print("InfluxDB write failed: ");
-      Serial.println(client.getLastErrorMessage());
-    }
+    // if (!client.writePoint(sensor)) {
+    //   Serial.print("InfluxDB write failed: ");
+    //   Serial.println(client.getLastErrorMessage());
+    // }
+    // if (!client.writePoint(sensor2)) {
+    //   Serial.print("InfluxDB write failed: ");
+    //   Serial.println(client.getLastErrorMessage());
+    // }
 
     Serial.println("Waiting 1 second");
     delay(1000);
